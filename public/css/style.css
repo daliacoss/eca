@@ -1,0 +1,12 @@
+/* some style */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+#app {
+    margin-left: auto;
+    margin-right: auto;
+    width: 640px;
+    height: 100%;
+}
