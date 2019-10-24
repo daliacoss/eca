@@ -4,9 +4,15 @@ html, body {
     margin: 0;
     overflow: hidden;
 }
+
 #app {
     margin-left: auto;
     margin-right: auto;
     width: 640px;
     height: 100%;
+}
+
+#svg-container {
+    height: 320px;
+    border: 1px solid black;
 }

@@ -1,11 +1,19 @@
 (ns eca.core
-  (:require [reagent.core :as reagent :refer [atom]]
-            [bitset]))
+  (:require [reagent.core :as reagent :refer [atom]]))
 
-(defonce grid-data (-> #(. bitset Random)
-                  (map (range 16))
-                  vec
-                  atom))
+;(defonce grid-data (-> #(. bitset Random)
+;                  (map (range 16))
+;                  vec
+;                  atom))
+
+(defonce num-rows (atom 16))
+(defonce num-cols (atom 32))
+(defonce rule (atom 1))
+(defonce grid-data (-> (map bit-set
+                            (repeat 0)
+                            (repeatedly @num-rows #(rand-int @num-cols)))
+                       vec
+                       atom))
 
 (defonce cell-size (atom 20))
 
@@ -17,49 +25,54 @@
                :fill (if-not state "none")}]
     [:rect attrs]))
 
-(defn row [{:keys [col-indices cell-size row-index]}]
+(defn row [{:keys [row-data cell-size row-index row-length]}]
   (into [:g]
           (map-indexed
            #(vector cell {:size cell-size
                           :row-index row-index
                           :col-index %2
-                          :state true})
-           col-indices)))
+                          :state (bit-test row-data %1) })
+           (range row-length))))
 
-(defn grid [{:keys [col-index-vecs cell-size]}]
+(defn grid [{:keys [data cell-size row-length]}]
   (into [:g]
           (map-indexed
-           #(vector row {:cell-size cell-size :row-index %1 :col-indices %2})
-           col-index-vecs)))
+           #(vector row {:row-length row-length
+                         :cell-size cell-size
+                         :row-index %1
+                         :row-data %2})
+           data)))
+
+(defn bit-value [x i]
+  (if (bit-test x i) 1 0))
 
 (defn flip-bit [coll, row-index, col-index]
   (update coll
           row-index
-          (fn [bs]
-            (let [newbs (. bs (flip col-index))]
-              newbs))))
+          bit-flip
+          col-index))
 
-(defn bitset-nth-triad [bs full-length i]
-  (map #(. bs (get (mod (+ % i) full-length))) (range 1 -2 -1)))
+(defn nth-bit-triad
+  ([x full-length i big-endian?]
+   (map
+    #(bit-value x (mod (+ % i) full-length))
+    (if big-endian?
+        (range 1 -2 -1)
+        (range -1 2 1))))
+  ([x full-length i]
+   (nth-bit-triad x full-length i false)))
 
-(defn bitset-triads [bs full-length]
-  (map #(bitset-nth-triad bs full-length %) (range full-length)))
+(defn bit-triads [x full-length]
+  (map #(nth-bit-triad x full-length %) (range full-length)))
 
-(defn bit-seq-to-int [bs]
-  (->> bs
-       reverse
+(defn bits-to-int [bits]
+  (->> bits
        (map-indexed #(bit-shift-left %2 %1))
        (reduce +)))
 
-(defn apply-rule [bs rule length]
-  (map #(bit-test rule (bit-seq-to-int %)) (bitset-triads bs length)))
-
-(defn bool-seq-to-bitset [bools]
-  (->> bools
-       (map-indexed #(when (true? %2) %1))
-       (remove nil?)
-       clj->js
-       bitset))
+(defn apply-rule [x rule length]
+  (bits-to-int
+    (map #(bit-value rule (bits-to-int %)) (bit-triads x length))))
 
 (defn on-svg-click [e]
   (let [bound (.. e -target getBoundingClientRect)
@@ -71,14 +84,17 @@
     (swap! grid-data flip-bit row-index col-index 0)))
     ;(println (. js/Math floor (/ x s)))))
 
+(defn advance-row [i]
+  (swap! grid-data
+         #(do
+            (update % i apply-rule @rule @num-cols))))
+
 (defn on-cell-mouse-over [e]
   (js/console.log e.button))
 
 (defn app []
-  (println (apply-rule (first @grid-data) 1 32))
-  (println (. (bool-seq-to-bitset '(false false true false true)) toString))
-  [:div {:style {:height "100%"}}
-   [:div {:style {:height "320px"}}
+  [:div
+   [:div#svg-container
     [:svg {:xmlns "http://www.w3.org/2000/svg"
            :fill "black"
            :width "100%"
@@ -86,14 +102,15 @@
            :stroke "none"
            :pointerEvents "all"
            :shape-rendering "crispEdges"}
-     [grid {:col-index-vecs (map #(js->clj (. % toArray)) @grid-data)
-            :cell-size @cell-size}]
+     [grid {:data @grid-data
+            :cell-size @cell-size
+            :row-length @num-cols}]
      [:rect {:fill "none"
              :onClick on-svg-click
              ;:onMouseOver on-cell-mouse-over
-             :width (* 20 32)
-             :height (* 20 16)}]]
-    [:button "test"]]
+             :width (* @cell-size @num-cols)
+             :height (* @cell-size @num-rows)}]]
+    [:button {:onClick #(advance-row 0)} "test"]]
    ])
 
 (defn start []

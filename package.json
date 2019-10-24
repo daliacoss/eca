@@ -7,7 +7,6 @@
     "clean": "rm -rf target; rm -rf public/js/compiled"
   },
   "dependencies": {
-    "bitset": "^5.0.5",
     "create-react-class": "^15.6.2",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
