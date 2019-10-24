@@ -1,11 +1,6 @@
 (ns eca.core
   (:require [reagent.core :as reagent :refer [atom]]))
 
-;(defonce grid-data (-> #(. bitset Random)
-;                  (map (range 16))
-;                  vec
-;                  atom))
-
 (defonce num-rows (atom 16))
 (defonce num-cols (atom 32))
 (defonce rule (atom 1))
@@ -92,6 +87,10 @@
 (defn on-cell-mouse-over [e]
   (js/console.log e.button))
 
+(defn on-step-button-click []
+  (doseq [i (range @num-rows)]
+    (advance-row i)))
+
 (defn app []
   [:div
    [:div#svg-container
@@ -110,7 +109,12 @@
              ;:onMouseOver on-cell-mouse-over
              :width (* @cell-size @num-cols)
              :height (* @cell-size @num-rows)}]]
-    [:button {:onClick #(advance-row 0)} "test"]]
+    [:button {:onClick on-step-button-click} "Step"]
+    [:input {:type "number"
+             :value @rule
+             :onChange #(reset! rule (.. % -target -value))
+             :min 0
+             :max 255}]]
    ])
 
 (defn start []

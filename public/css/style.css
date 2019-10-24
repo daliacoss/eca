@@ -2,17 +2,28 @@
 html, body {
     height: 100%;
     margin: 0;
-    overflow: hidden;
+    font: 16px verdana;
 }
 
 #app {
     margin-left: auto;
     margin-right: auto;
-    width: 640px;
+    width: 100%;
+    max-width: 640px;
     height: 100%;
+    overflow: hidden;
 }
 
 #svg-container {
     height: 320px;
     border: 1px solid black;
+}
+
+button {
+    font: inherit;
+}
+
+input[type="number"] {
+   font: inherit;
+   width: 6ch;
 }
