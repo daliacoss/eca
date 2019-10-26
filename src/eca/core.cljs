@@ -1,6 +1,7 @@
 (ns eca.core
   (:require [reagent.core :as reagent :refer [atom]]))
 
+(defonce max-int 4294967295)
 (defonce num-rows (atom 16))
 (defonce num-cols (atom 32))
 (defonce rule (atom 1))
@@ -12,6 +13,9 @@
 (defonce iterate-down? (atom false))
 (defonce cell-size (atom 20))
 (defonce playing? (atom false))
+
+;(defn grid-random
+;  ([] (map rand-int (repeat @num-cols))))
 
 (defn cell [{:keys [size row-index col-index state]}]
   (let [attrs {:width size
@@ -103,9 +107,13 @@
 (defn timer [initial-props]
   (let [id (atom nil)
         id-updater #(if % set-interval-if-nil clear-interval-if-not-nil)]
-    (fn [{:keys [on]}]
-      (swap! id (id-updater on)) nil)))
-
+    (reagent/create-class
+     {:reagent-render
+      (fn [{:keys [on]}]
+        (swap! id (id-updater on)) nil)
+      :component-will-unmount
+      (fn [] (swap! id clear-interval-if-not-nil))})))
+ 
 (defn app []
   [:div
    [timer {:on @playing?}]
