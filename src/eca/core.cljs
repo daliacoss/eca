@@ -11,7 +11,7 @@
                        atom))
 (defonce iterate-down? (atom false))
 (defonce cell-size (atom 20))
-(defonce autoplay? (atom false))
+(defonce playing? (atom false))
 
 (defn cell [{:keys [size row-index col-index state]}]
   (let [attrs {:width size
@@ -78,7 +78,9 @@
         col-index (. js/Math floor (/ x s))
         row-index (. js/Math floor (/ y s))]
     (swap! grid-data flip-bit row-index col-index 0)))
-    ;(println (. js/Math floor (/ x s)))))
+
+(defn on-play-button-click [e]
+  (swap! playing? not))
 
 (defn advance-grid []
   (swap! grid-data
@@ -92,8 +94,21 @@
 (defn on-iterate-checkbox-change [e]
   (reset! iterate-down? (.. e -target -checked)))
 
+(defn set-interval-if-nil [x]
+  (or x (. js/window (setInterval advance-grid 250))))
+
+(defn clear-interval-if-not-nil [x]
+  (if x (. js/window clearInterval x)))
+
+(defn timer [initial-props]
+  (let [id (atom nil)
+        id-updater #(if % set-interval-if-nil clear-interval-if-not-nil)]
+    (fn [{:keys [on]}]
+      (swap! id (id-updater on)) nil)))
+
 (defn app []
   [:div
+   [timer {:on @playing?}]
    [:div#svg-container
     [:svg {:xmlns "http://www.w3.org/2000/svg"
            :fill "black"
@@ -110,7 +125,6 @@
              ;:onMouseOver on-cell-mouse-over
              :width (* @cell-size @num-cols)
              :height (* @cell-size @num-rows)}]]
-    [:button {:onClick advance-grid} "Step"]
     [:label
      "Rule"
      [:input {:type "number"
@@ -121,7 +135,11 @@
     [:label
      "Iterate downward"
      [:input {:type "checkbox"
-              :onChange on-iterate-checkbox-change}]]]
+              :onChange on-iterate-checkbox-change}]]
+    [:br]
+    [:button {:onClick advance-grid} "Step"]
+    [:button {:onClick on-play-button-click} (if @playing? "Pause" "Play")]
+    ]
    ])
 
 (defn start []
