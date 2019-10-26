@@ -9,8 +9,9 @@
                             (repeatedly @num-rows #(rand-int @num-cols)))
                        vec
                        atom))
-
+(defonce iterate-down? (atom false))
 (defonce cell-size (atom 20))
+(defonce autoplay? (atom false))
 
 (defn cell [{:keys [size row-index col-index state]}]
   (let [attrs {:width size
@@ -79,17 +80,17 @@
     (swap! grid-data flip-bit row-index col-index 0)))
     ;(println (. js/Math floor (/ x s)))))
 
-(defn advance-row [i]
+(defn advance-grid []
   (swap! grid-data
-         #(do
-            (update % i apply-rule @rule @num-cols))))
+         #(if @iterate-down?
+              (do (conj
+               (subvec % 1)
+               (apply-rule (peek %) @rule @num-cols)))
+              (vec (for [x %]
+               (apply-rule x @rule @num-cols))))))
 
-(defn on-cell-mouse-over [e]
-  (js/console.log e.button))
-
-(defn on-step-button-click []
-  (doseq [i (range @num-rows)]
-    (advance-row i)))
+(defn on-iterate-checkbox-change [e]
+  (reset! iterate-down? (.. e -target -checked)))
 
 (defn app []
   [:div
@@ -109,12 +110,18 @@
              ;:onMouseOver on-cell-mouse-over
              :width (* @cell-size @num-cols)
              :height (* @cell-size @num-rows)}]]
-    [:button {:onClick on-step-button-click} "Step"]
-    [:input {:type "number"
-             :value @rule
-             :onChange #(reset! rule (.. % -target -value))
-             :min 0
-             :max 255}]]
+    [:button {:onClick advance-grid} "Step"]
+    [:label
+     "Rule"
+     [:input {:type "number"
+              :value @rule
+              :onChange #(reset! rule (.. % -target -value))
+              :min 0
+              :max 255}]]
+    [:label
+     "Iterate downward"
+     [:input {:type "checkbox"
+              :onChange on-iterate-checkbox-change}]]]
    ])
 
 (defn start []
