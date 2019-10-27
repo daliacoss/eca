@@ -1,21 +1,26 @@
 (ns eca.core
   (:require [reagent.core :as reagent :refer [atom]]))
 
-(defonce max-int 4294967295)
+(defn rand-int-with-cardinality [x, nbits]
+  (reduce bit-set 0 (take x (shuffle (range nbits)))))
+
+(defn random-grid
+  ([nr nc]
+   ; bit-set doesn't return large unsigned integers, which matters for rand-int
+   (let [u (reduce * (repeat nc 2))]
+     (repeatedly nr (partial rand-int u))))
+  ([nr nc x]
+   (repeatedly nr (partial rand-int-with-cardinality x nc))))
+
 (defonce num-rows (atom 16))
 (defonce num-cols (atom 32))
 (defonce rule (atom 1))
-(defonce grid-data (-> (map bit-set
-                            (repeat 0)
-                            (repeatedly @num-rows #(rand-int @num-cols)))
-                       vec
-                       atom))
 (defonce iterate-down? (atom false))
 (defonce cell-size (atom 20))
 (defonce playing? (atom false))
-
-;(defn grid-random
-;  ([] (map rand-int (repeat @num-cols))))
+(defonce grid-data (-> (random-grid @num-rows @num-cols)
+                       vec
+                       atom))
 
 (defn cell [{:keys [size row-index col-index state]}]
   (let [attrs {:width size
@@ -98,6 +103,9 @@
 (defn on-iterate-checkbox-change [e]
   (reset! iterate-down? (.. e -target -checked)))
 
+(defn on-randomize-button-click []
+  (reset! grid-data (vec (random-grid @num-rows @num-cols))))
+
 (defn set-interval-if-nil [x]
   (or x (. js/window (setInterval advance-grid 250))))
 
@@ -147,6 +155,7 @@
     [:br]
     [:button {:onClick advance-grid} "Step"]
     [:button {:onClick on-play-button-click} (if @playing? "Pause" "Play")]
+    [:button {:onClick on-randomize-button-click} "Randomize"]
     ]
    ])
 
