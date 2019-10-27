@@ -107,7 +107,9 @@
   (reset! grid-data (vec (random-grid @num-rows @num-cols))))
 
 (defn set-interval-if-nil [x]
-  (or x (. js/window (setInterval advance-grid 250))))
+  (or x (do
+          (advance-grid)
+          (. js/window (setInterval advance-grid 250)))))
 
 (defn clear-interval-if-not-nil [x]
   (if x (. js/window clearInterval x)))
@@ -121,6 +123,24 @@
         (swap! id (id-updater on)) nil)
       :component-will-unmount
       (fn [] (swap! id clear-interval-if-not-nil))})))
+
+(defn controls []
+  [:fieldset
+    [:label {:for "rule"} "Rule"]
+    [:input {:type "number"
+             :value @rule
+             :onChange #(reset! rule (.. % -target -value))
+             :min 0
+             :id "rule"
+             :max 255}]
+    [:label {:for "iterate-down"} "Iterate downward"]
+    [:input {:type "checkbox"
+             :id "iterate-down"
+             :onChange on-iterate-checkbox-change}]
+    [:br]
+    [:button {:onClick advance-grid :disabled @playing?} "Step"]
+    [:button {:onClick on-play-button-click} (if @playing? "Pause" "Play")]
+    [:button {:onClick on-randomize-button-click} "Randomize"]])
  
 (defn app []
   [:div
@@ -141,21 +161,7 @@
              ;:onMouseOver on-cell-mouse-over
              :width (* @cell-size @num-cols)
              :height (* @cell-size @num-rows)}]]
-    [:label
-     "Rule"
-     [:input {:type "number"
-              :value @rule
-              :onChange #(reset! rule (.. % -target -value))
-              :min 0
-              :max 255}]]
-    [:label
-     "Iterate downward"
-     [:input {:type "checkbox"
-              :onChange on-iterate-checkbox-change}]]
-    [:br]
-    [:button {:onClick advance-grid} "Step"]
-    [:button {:onClick on-play-button-click} (if @playing? "Pause" "Play")]
-    [:button {:onClick on-randomize-button-click} "Randomize"]
+    [controls]
     ]
    ])
 
