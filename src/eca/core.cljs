@@ -4,13 +4,15 @@
 (defn rand-int-with-cardinality [x, nbits]
   (reduce bit-set 0 (take x (shuffle (range nbits)))))
 
-(defn random-grid
+(defn rand-grid
   ([nr nc]
    ; bit-set doesn't return large unsigned integers, which matters for rand-int
    (let [u (reduce * (repeat nc 2))]
      (repeatedly nr (partial rand-int u))))
   ([nr nc x]
-   (repeatedly nr (partial rand-int-with-cardinality x nc))))
+   (if (not x)
+       (rand-grid nr nc)
+       (repeatedly nr (partial rand-int-with-cardinality x nc)))))
 
 (defonce num-rows (atom 16))
 (defonce num-cols (atom 32))
@@ -18,9 +20,15 @@
 (defonce iterate-down? (atom false))
 (defonce cell-size (atom 20))
 (defonce playing? (atom false))
-(defonce grid-data (-> (random-grid @num-rows @num-cols)
+(defonce grid-data (-> (rand-grid @num-rows @num-cols)
                        vec
                        atom))
+(defonce reset-menu-state (atom {:cardinality-on false
+                                 :reset-method nil
+                                 :cardinality 1}))
+
+(defn power-of-2 [n]
+  (reduce * (repeat n 2)))
 
 (defn cell [{:keys [size row-index col-index state]}]
   (let [attrs {:width size
@@ -103,8 +111,32 @@
 (defn on-iterate-checkbox-change [e]
   (reset! iterate-down? (.. e -target -checked)))
 
-(defn on-randomize-button-click []
-  (reset! grid-data (vec (random-grid @num-rows @num-cols))))
+(defn on-reset-form-submit [e]
+  (let [{:keys [reset-method cardinality-on cardinality]} @reset-menu-state
+        new-data (condp = reset-method
+                        "randomize" (rand-grid
+                                     @num-rows
+                                     @num-cols
+                                     (if cardinality-on cardinality))
+                        "all-on" (repeat
+                                  @num-rows
+                                  (dec (power-of-2 @num-cols)))
+                        "all-off" (repeat @num-rows 0))]
+    (reset! grid-data (vec new-data))
+    (. e preventDefault)))
+
+(defn radio [{:keys [id] :as props}]
+  [:input (conj {:value (props :id)
+                 :type "radio"} props)])
+
+(defn on-reset-form-change [e]
+  (let [target (. e -target)
+        k (keyword (. target -name))
+        t (keyword (. target -type))
+        v (condp = t :checkbox (. target -checked)
+                     :number (js/Number (. target -value))
+                     (. target -value))]
+    (swap! reset-menu-state assoc k v)))
 
 (defn set-interval-if-nil [x]
   (or x (do
@@ -124,8 +156,50 @@
       :component-will-unmount
       (fn [] (swap! id clear-interval-if-not-nil))})))
 
+(defn reset-menu []
+ (let []
+   (fn [{:keys [cardinality-on cardinality reset-method]}]
+     [:form {:onChange on-reset-form-change
+             :onSubmit on-reset-form-submit}
+      [:fieldset
+       [:legend "Reset grid"]
+       [:div
+        [radio {:name "reset-method"
+                :id "randomize"}]
+                ;:checked (nil? reset-method)}]
+        [:label {:for "randomize"} "Randomize"]
+        [:div.indented
+         [:input {:type "checkbox"
+                  :disabled (not= reset-method "randomize")
+                  :name "cardinality-on"
+                  :id "cardinality-on"}]
+         [:label {:for "cardinality-on"} "With cardinality:"]
+         [:input {:type "number"
+                  :value cardinality
+                  :min 1
+                  :max 31 ; TODO change to num-cols - 1
+                  :name "cardinality"
+                  :disabled (not cardinality-on)}]]]
+       [:div
+        [radio {:name "reset-method" :id "all-off"}]
+        [:label {:for "all-off"} "All off"]]
+       [:div
+        [radio {:name "reset-method" :id "all-on"}]
+        [:label {:for "all-on"} "All on"]]
+       [:button {:disabled (not reset-method)} "Reset"]]])))
+ 
+
 (defn controls []
-  [:fieldset
+  [:div.controls
+   [:fieldset
+    [:button
+     {:type "button" :onClick on-play-button-click}
+     (if @playing? "Pause" "Play")]
+    [:button
+     {:type "button" :onClick advance-grid :disabled @playing?}
+     "Step"]]
+   [:fieldset
+    [:legend "Configure"]
     [:label {:for "rule"} "Rule"]
     [:input {:type "number"
              :value @rule
@@ -136,11 +210,8 @@
     [:label {:for "iterate-down"} "Iterate downward"]
     [:input {:type "checkbox"
              :id "iterate-down"
-             :onChange on-iterate-checkbox-change}]
-    [:br]
-    [:button {:onClick advance-grid :disabled @playing?} "Step"]
-    [:button {:onClick on-play-button-click} (if @playing? "Pause" "Play")]
-    [:button {:onClick on-randomize-button-click} "Randomize"]])
+             :onChange on-iterate-checkbox-change}]]
+   [reset-menu @reset-menu-state]])
  
 (defn app []
   [:div

@@ -19,11 +19,43 @@ html, body {
     border: 1px solid black;
 }
 
+.controls {
+    border: none;
+}
+
 button {
-    font: inherit;
+    background-color: #f0f0f0;
+    color: black;
+    font-size: inherit;
+    padding: 10px;
+    border: 1px outset black;
+}
+
+button:active:enabled {
+    border: 1px inset black;
+}
+
+button:hover:enabled, button:focus:enabled {
+    background-color: white;
+}
+
+button:disabled {
+    color: grey;
+}
+
+.indented {
+    margin-left: 2em;
+}
+
+fieldset {
+    line-height: 2em;
 }
 
 input[type="number"] {
    font: inherit;
    width: 6ch;
+}
+
+input:disabled+label {
+   color: grey;
 }

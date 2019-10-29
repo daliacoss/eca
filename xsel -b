@@ -1,0 +1,2 @@
+(defn rand-int-with-cardinality [x, nbits]
+  (reduce bit-set 0 (take x (shuffle (range nbits)))))
