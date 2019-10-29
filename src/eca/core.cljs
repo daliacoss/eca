@@ -216,7 +216,7 @@
 (defn app []
   [:div
    [timer {:on @playing?}]
-   [:div#svg-container
+   [:div#svg-container {:style {:height (* @cell-size @num-rows)}}
     [:svg {:xmlns "http://www.w3.org/2000/svg"
            :fill "black"
            :width "100%"
@@ -234,7 +234,16 @@
              :height (* @cell-size @num-rows)}]]]
    [controls]])
 
+(defn on-window-resize []
+  (let [w (. js/window -innerWidth)
+        min-w-before-shrink 640
+        default-cell-size 20
+        rescale-amt (min 1 (/ w min-w-before-shrink))]
+    (reset! cell-size (* default-cell-size rescale-amt))))
+
 (defn start []
+  (set! (. js/window -onresize) on-window-resize)
+  (on-window-resize)
   (reagent/render-component [app]
                             (. js/document (getElementById "app"))))
 
