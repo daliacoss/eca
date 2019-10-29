@@ -231,10 +231,8 @@
              :onClick on-svg-click
              ;:onMouseOver on-cell-mouse-over
              :width (* @cell-size @num-cols)
-             :height (* @cell-size @num-rows)}]]
-    [controls]
-    ]
-   ])
+             :height (* @cell-size @num-rows)}]]]
+   [controls]])
 
 (defn start []
   (reagent/render-component [app]
