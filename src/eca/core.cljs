@@ -14,7 +14,7 @@
        (rand-grid nr nc)
        (repeatedly nr (partial rand-int-with-cardinality x nc)))))
 
-(defonce num-rows (atom 16))
+(defonce num-rows (atom 32))
 (defonce num-cols (atom 32))
 (defonce rule (atom 1))
 (defonce iterate-parallel? (atom true))
@@ -210,7 +210,7 @@
     [:label {:for "iterate-parallel"} "Parallel iteration"]
     [:input {:type "checkbox"
              :id "iterate-parallel"
-             :checked iterate-parallel?
+             :checked @iterate-parallel?
              :onChange on-iterate-checkbox-change}]]
    [reset-menu @reset-menu-state]])
  
