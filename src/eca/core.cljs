@@ -17,7 +17,7 @@
 (defonce num-rows (atom 16))
 (defonce num-cols (atom 32))
 (defonce rule (atom 1))
-(defonce iterate-down? (atom false))
+(defonce iterate-parallel? (atom true))
 (defonce cell-size (atom 20))
 (defonce playing? (atom false))
 (defonce grid-data (-> (rand-grid @num-rows @num-cols)
@@ -101,15 +101,15 @@
 
 (defn advance-grid []
   (swap! grid-data
-         #(if @iterate-down?
+         #(if @iterate-parallel?
+              (vec (for [x %]
+               (apply-rule x @rule @num-cols)))
               (do (conj
                (subvec % 1)
-               (apply-rule (peek %) @rule @num-cols)))
-              (vec (for [x %]
-               (apply-rule x @rule @num-cols))))))
+               (apply-rule (peek %) @rule @num-cols))))))
 
 (defn on-iterate-checkbox-change [e]
-  (reset! iterate-down? (.. e -target -checked)))
+  (reset! iterate-parallel? (.. e -target -checked)))
 
 (defn on-reset-form-submit [e]
   (let [{:keys [reset-method cardinality-on cardinality]} @reset-menu-state
@@ -207,9 +207,10 @@
              :min 0
              :id "rule"
              :max 255}]
-    [:label {:for "iterate-down"} "Iterate downward"]
+    [:label {:for "iterate-parallel"} "Parallel iteration"]
     [:input {:type "checkbox"
-             :id "iterate-down"
+             :id "iterate-parallel"
+             :checked iterate-parallel?
              :onChange on-iterate-checkbox-change}]]
    [reset-menu @reset-menu-state]])
  
