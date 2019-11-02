@@ -16,7 +16,7 @@
 
 (defonce num-rows (atom 32))
 (defonce num-cols (atom 32))
-(defonce rule (atom 1))
+(defonce rule (atom (rand-int 256)))
 (defonce iterate-parallel? (atom true))
 (defonce cell-size (atom 20))
 (defonce playing? (atom false))
@@ -26,6 +26,8 @@
 (defonce reset-menu-state (atom {:cardinality-on false
                                  :reset-method nil
                                  :cardinality 1}))
+(defonce interval-id (atom nil))
+(defonce fps (atom 4))
 
 (defn power-of-2 [n]
   (reduce * (repeat n 2)))
@@ -138,23 +140,30 @@
                      (. target -value))]
     (swap! reset-menu-state assoc k v)))
 
-(defn set-interval-if-nil [x]
+(defn set-interval-if-nil [x speed]
   (or x (do
           (advance-grid)
-          (. js/window (setInterval advance-grid 250)))))
+          (. js/window (setInterval advance-grid (/ 1000 speed))))))
 
 (defn clear-interval-if-not-nil [x]
   (if x (. js/window clearInterval x)))
 
+(defn set-interval [a speed]
+  (reset! a (. js/window (setInterval advance-grid (/ 1000 speed)))))
+
+(defn clear-interval [a]
+  (swap! a (. js/window -clearInterval)))
+
 (defn timer [initial-props]
-  (let [id (atom nil)
-        id-updater #(if % set-interval-if-nil clear-interval-if-not-nil)]
+  (let [id (atom nil)]
     (reagent/create-class
      {:reagent-render
-      (fn [{:keys [on]}]
-        (swap! id (id-updater on)) nil)
+      (fn [{:keys [on fps]}]
+        (clear-interval id)
+        (if on (set-interval id fps))
+        nil)
       :component-will-unmount
-      (fn [] (swap! id clear-interval-if-not-nil))})))
+      (fn [] (clear-interval id))}))) 
 
 (defn reset-menu []
  (let []
@@ -173,7 +182,7 @@
                   :disabled (not= reset-method "randomize")
                   :name "cardinality-on"
                   :id "cardinality-on"}]
-         [:label {:for "cardinality-on"} "With cardinality:"]
+         [:label {:for "cardinality-on"} "With cardinality: "]
          [:input {:type "number"
                   :value cardinality
                   :min 1
@@ -186,53 +195,67 @@
        [:div
         [radio {:name "reset-method" :id "all-on"}]
         [:label {:for "all-on"} "All on"]]
-       [:button {:disabled (not reset-method)} "Reset"]]])))
+       [:div.flex
+        [:button {:disabled (not reset-method)} "Reset"]]]])))
  
 
 (defn controls []
-  [:div.controls
-   [:fieldset
+  [:div#controls
+   [:fieldset [:div.flex
     [:button
      {:type "button" :onClick on-play-button-click}
      (if @playing? "Pause" "Play")]
     [:button
      {:type "button" :onClick advance-grid :disabled @playing?}
-     "Step"]]
-   [:fieldset
+     "Step"]
+    [:div.multiline
+     [:input {:type "range"
+              :min 1
+              :max 15
+              :value @fps
+              :id "speed"
+              :onChange #(reset! fps (.. % -target -value))}]
+     [:label {:for "speed"} "Speed: "]
+     @fps]]]
+   [:fieldset 
     [:legend "Configure"]
-    [:label {:for "rule"} "Rule"]
-    [:input {:type "number"
-             :value @rule
-             :onChange #(reset! rule (.. % -target -value))
-             :min 0
-             :id "rule"
-             :max 255}]
-    [:label {:for "iterate-parallel"} "Parallel iteration"]
-    [:input {:type "checkbox"
-             :id "iterate-parallel"
-             :checked @iterate-parallel?
-             :onChange on-iterate-checkbox-change}]]
+    [:div.flex
+     [:div
+      [:label {:for "rule"} "Rule: "]
+      [:input {:type "number"
+               :value @rule
+               :onChange #(reset! rule (.. % -target -value))
+               :min 0
+               :id "rule"
+               :max 255}]]
+     [:div.multiline
+      [:input {:type "checkbox"
+               :id "iterate-parallel"
+               :checked @iterate-parallel?
+               :onChange on-iterate-checkbox-change}]
+      [:label {:for "iterate-parallel"} "Parallel iteration"]]]]
    [reset-menu @reset-menu-state]])
  
 (defn app []
-  [:div
-   [timer {:on @playing?}]
-   [:div#svg-container {:style {:height (* @cell-size @num-rows)}}
-    [:svg {:xmlns "http://www.w3.org/2000/svg"
-           :fill "black"
-           :width "100%"
-           :height "100%"
-           :stroke "none"
-           :pointerEvents "all"
-           :shape-rendering "crispEdges"}
-     [grid {:data @grid-data
-            :cell-size @cell-size
-            :row-length @num-cols}]
-     [:rect {:fill "none"
-             :onClick on-svg-click
-             ;:onMouseOver on-cell-mouse-over
-             :width (* @cell-size @num-cols)
-             :height (* @cell-size @num-rows)}]]]
+  [:div#app-inner
+   [timer {:on @playing? :fps @fps }]
+   (let [s (* @cell-size @num-rows)]
+     [:div#svg-container {:style {:height s :width (- s 2)}}
+      [:svg {:xmlns "http://www.w3.org/2000/svg"
+             :fill "black"
+             :width "100%"
+             :height "100%"
+             :stroke "none"
+             :pointerEvents "all"
+             :shape-rendering "crispEdges"}
+       [grid {:data @grid-data
+              :cell-size @cell-size
+              :row-length @num-cols}]
+       [:rect {:fill "none"
+               :onClick on-svg-click
+               ;:onMouseOver on-cell-mouse-over
+               :width (* @cell-size @num-cols)
+               :height (* @cell-size @num-rows)}]]])
    [controls]])
 
 (defn on-window-resize []

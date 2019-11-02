@@ -8,18 +8,29 @@ html, body {
 #app {
     margin-left: auto;
     margin-right: auto;
-    width: 100%;
-    max-width: 640px;
     height: 100%;
+    max-width: 1060px;
+}
+
+#app-inner {
+    display: flex;
+    flex-wrap: wrap;
 }
 
 #svg-container {
-    height: 320px;
+    flex-shrink: 0;
     border: 1px solid black;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.controls {
+#controls {
     border: none;
+    flex: 1;
+    max-width: 410px;
+    min-width: 250px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 button {
@@ -57,4 +68,26 @@ input[type="number"] {
 
 input:disabled+label {
    color: grey;
+}
+
+.flex {
+    flex-wrap: wrap;
+    display: flex;
+    align-items: center;
+}
+
+.flex button, .flex div{
+    flex: 1;
+    padding: 4px;
+    min-width: 100px;
+    margin: 0 2px;
+}
+
+.flex div input[type="range"] {
+    width: 100%;
+}
+
+.multiline {
+    text-align: center;
+    line-height: 1em;
 }
