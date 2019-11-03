@@ -1,4 +1,4 @@
-# {{name}}
+# Elementary Cellular Automata (ECA) Visualizer
 
 ## Run
 
@@ -22,7 +22,7 @@ yarn release
 
 ## License
 
-Copyright © 2017 FIXME
+Copyright © 2019 Dalia Coss
 
-Distributed under the Eclipse Public License either version 1.0 or (at
+Distributed under the Eclipse Public License either version 2.0 or (at
 your option) any later version.

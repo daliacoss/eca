@@ -140,14 +140,6 @@
                      (. target -value))]
     (swap! reset-menu-state assoc k v)))
 
-(defn set-interval-if-nil [x speed]
-  (or x (do
-          (advance-grid)
-          (. js/window (setInterval advance-grid (/ 1000 speed))))))
-
-(defn clear-interval-if-not-nil [x]
-  (if x (. js/window clearInterval x)))
-
 (defn set-interval [a speed]
   (reset! a (. js/window (setInterval advance-grid (/ 1000 speed)))))
 
@@ -201,22 +193,23 @@
 
 (defn controls []
   [:div#controls
-   [:fieldset [:div.flex
-    [:button
-     {:type "button" :onClick on-play-button-click}
-     (if @playing? "Pause" "Play")]
-    [:button
-     {:type "button" :onClick advance-grid :disabled @playing?}
-     "Step"]
-    [:div.multiline
-     [:input {:type "range"
-              :min 1
-              :max 15
-              :value @fps
-              :id "speed"
-              :onChange #(reset! fps (.. % -target -value))}]
-     [:label {:for "speed"} "Speed: "]
-     @fps]]]
+   [:fieldset
+    [:div.flex
+     [:button
+      {:type "button" :onClick on-play-button-click}
+      (if @playing? "Pause" "Play")]
+     [:button
+      {:type "button" :onClick advance-grid :disabled @playing?}
+      "Step"]
+     [:div.multiline
+      [:input {:type "range"
+               :min 1
+               :max 15
+               :value @fps
+               :id "speed"
+               :onChange #(reset! fps (.. % -target -value))}]
+      [:label {:for "speed"} "Speed: "]
+      @fps]]]
    [:fieldset 
     [:legend "Configure"]
     [:div.flex
