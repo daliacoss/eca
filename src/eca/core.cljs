@@ -29,6 +29,7 @@
                                  :cardinality 1}))
 (defonce interval-id (atom nil))
 (defonce fps (atom 4))
+(defonce iterate-parallel-never-checked? (atom true))
 
 (defn power-of-2 [n]
   (reduce * (repeat n 2)))
@@ -112,7 +113,12 @@
                (apply-rule (peek %) @rule @num-cols))))))
 
 (defn on-iterate-checkbox-change [e]
-  (reset! iterate-parallel? (.. e -target -checked)))
+  (let [b (.. e -target -checked)]
+    (if (and b @iterate-parallel-never-checked?)
+        (do
+          (js/alert "Enabling parallel iteration may result in high-contrast flashing patterns.")
+          (reset! iterate-parallel-never-checked? false)))
+    (reset! iterate-parallel? b)))
 
 (defn on-reset-form-submit [e]
   (let [{:keys [reset-method cardinality-on cardinality]} @reset-menu-state
