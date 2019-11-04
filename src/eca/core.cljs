@@ -81,14 +81,14 @@
 (defn bit-triads [x full-length]
   (map #(nth-bit-triad x full-length %) (range full-length)))
 
-(defn bits-to-int [bits]
+(defn bits->int [bits]
   (->> bits
        (map-indexed #(bit-shift-left %2 %1))
        (reduce +)))
 
 (defn apply-rule [x rule length]
-  (bits-to-int
-    (map #(bit-value rule (bits-to-int %)) (bit-triads x length))))
+  (bits->int
+    (map #(bit-value rule (bits->int %)) (bit-triads x length))))
 
 (defn on-svg-click [e]
   (let [bound (.. e -target getBoundingClientRect)
