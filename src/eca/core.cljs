@@ -1,5 +1,6 @@
 (ns eca.core
-  (:require [reagent.core :as reagent :refer [atom]]))
+  (:require [reagent.core :as reagent :refer [atom]]
+            [clojure.string :as string]))
 
 (defn rand-int-with-cardinality [x, nbits]
   (reduce bit-set 0 (take x (shuffle (range nbits)))))
@@ -157,13 +158,22 @@
       :component-will-unmount
       (fn [] (clear-interval id))}))) 
 
+(defn collapsible-fieldset [{:keys [collapsed-by-default]}]
+  (let [collapsed (atom collapsed-by-default)]
+    (fn [{:keys [legend]} & children]
+      (into
+       [:fieldset {:class (if @collapsed "collapsed")}
+        [:legend 
+         [:button {:type "button" :onClick #(swap! collapsed not)} legend]]]
+       children))))
+
 (defn reset-menu []
  (let []
    (fn [{:keys [cardinality-on cardinality reset-method]}]
      [:form {:onChange on-reset-form-change
              :onSubmit on-reset-form-submit}
-      [:fieldset
-       [:legend "Reset grid"]
+      [collapsible-fieldset
+       {:legend "Reset grid" :collapsed-by-default true}
        [:div
         [radio {:name "reset-method"
                 :id "randomize"}]
@@ -190,10 +200,10 @@
        [:div.flex
         [:button {:disabled (not reset-method)} "Reset"]]]])))
  
-
 (defn controls []
   [:div#controls
-   [:fieldset
+   [collapsible-fieldset
+    {:legend "Controls"}
     [:div.flex
      [:button
       {:type "button" :onClick on-play-button-click}
@@ -210,8 +220,8 @@
                :onChange #(reset! fps (.. % -target -value))}]
       [:label {:for "speed"} "Speed: "]
       @fps]]]
-   [:fieldset 
-    [:legend "Configure"]
+   [collapsible-fieldset
+    {:legend "Configure" :collapsed-by-default true}
     [:div.flex
      [:div
       [:label {:for "rule"} "Rule: "]
@@ -227,7 +237,11 @@
                :checked @iterate-parallel?
                :onChange on-iterate-checkbox-change}]
       [:label {:for "iterate-parallel"} "Parallel iteration"]]]]
-   [reset-menu @reset-menu-state]])
+   [reset-menu @reset-menu-state]
+   [:span#about
+    [:a {:href "https://github.com/deckycoss/eca"} "source code"]
+    [:br]
+    "Copyright © 2019 Dalia Coss"]])
  
 (defn app []
   [:div#app-inner
@@ -253,9 +267,10 @@
 
 (defn on-window-resize []
   (let [w (. js/window -innerWidth)
-        min-w-before-shrink 640
+        h (. js/window -innerHeight)
+        min-s-before-shrink 640
         default-cell-size 20
-        rescale-amt (min 1 (/ w min-w-before-shrink))]
+        rescale-amt (min 1 (/ (min w h) min-s-before-shrink))]
     (reset! cell-size (* default-cell-size rescale-amt))))
 
 (defn start []

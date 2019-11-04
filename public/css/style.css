@@ -1,8 +1,9 @@
-/* some style */
 html, body {
     height: 100%;
     margin: 0;
     font: 16px verdana;
+    background: white;
+    color: black;
 }
 
 #app {
@@ -31,6 +32,7 @@ html, body {
     min-width: 250px;
     margin-left: auto;
     margin-right: auto;
+    margin-top: 1em;
 }
 
 button {
@@ -54,11 +56,39 @@ button:disabled {
 }
 
 .indented {
-    margin-left: 2em;
+    margin-left: 1.5em;
 }
 
 fieldset {
+    margin-bottom: .5em;
     line-height: 2em;
+}
+
+legend {
+    background: white;
+    border: 1px solid grey;
+    width: 98%;
+    text-align: center;
+    padding: 0;
+}
+
+legend a {
+    text-decoration: none;
+}
+
+legend button {
+    background: none;
+    border: none;
+    width: 100%;
+}
+
+.collapsed > :not(legend) {
+    display: none;
+}
+
+.collapsed {
+    border: none;
+    margin-bottom: 0;
 }
 
 input[type="number"] {
@@ -90,4 +120,15 @@ input:disabled+label {
 .multiline {
     text-align: center;
     line-height: 1em;
+}
+
+.multiline label {
+    display: inline-block;
+}
+
+#about {
+    text-align: center;
+    display: inline-block;
+    width: 100%;
+    font-size: smaller;
 }
