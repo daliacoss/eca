@@ -18,7 +18,7 @@
 (defonce num-rows (atom 32))
 (defonce num-cols (atom 32))
 (defonce rule (atom (rand-int 256)))
-(defonce iterate-parallel? (atom true))
+(defonce iterate-parallel? (atom false))
 (defonce cell-size (atom 20))
 (defonce playing? (atom false))
 (defonce grid-data (-> (rand-grid @num-rows @num-cols)
@@ -188,7 +188,7 @@
          [:input {:type "number"
                   :value cardinality
                   :min 1
-                  :max 31 ; TODO change to num-cols - 1
+                  :max (dec @num-cols)
                   :name "cardinality"
                   :disabled (not cardinality-on)}]]]
        [:div
